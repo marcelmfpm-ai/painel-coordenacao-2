@@ -366,7 +366,9 @@ function processCSV(text) {
   const eventMap = {};
   rows.forEach(r => {
     if (!r.Data || !r.Aula || !r.Nome) return;
-    const key = `${r.Data}||${r.Aula}||${(r[colSala]||'').trim()}`;
+    const hKey = (r[colHorario] || '').trim();
+    const key = `${r.Data}||${r.Aula}||${hKey}||${(r[colSala]||'').trim()}`;
+
     if (!eventMap[key]) {
       eventMap[key] = { data: r.Data.trim(), aula: r.Aula.trim(), sala: (r[colSala]||'').trim(), horarios: [], equipe: [] };
     }
@@ -980,13 +982,19 @@ function autoLoadCSV() {
         return;
       }
 
-      const cols = Object.keys(results.data[0] || {});
-      const lines = [cols.join(';')].concat(
-        results.data.map(row =>
-          cols.map(c => (row[c] ?? '')).toString().replaceAll('\n',' ').trim()
-        ).join(';')
-      );
-      processCSV(lines.join('\n'));
+    const cols = Object.keys(results.data[0] || {});
+const lines = [cols.map(c => String(c).trim()).join(';')];
+
+
+results.data.forEach(row => {
+  const line = cols
+    .map(c => String(row[c] ?? '').replaceAll('\n', ' ').trim())
+    .join(';');
+  lines.push(line);
+});
+
+processCSV(lines.join('\n'));
+
     },
     error: function(err) {
       console.error(err);
