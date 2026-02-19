@@ -929,6 +929,45 @@ function processPastedCSV(){
   document.getElementById('loadedFileLabel').textContent='📋 CSV colado manualmente';
   processCSV(text);
 }
+
+// ===== AUTOLOAD (carrega sozinho ao abrir) =====
+function getCsvFromQuery() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get('csv'); // exemplo: index.html?csv=escalas.csv  OU ?csv=https://raw....
+}
+
+function autoLoadCSV() {
+  const url = getCsvFromQuery() || 'escalas.csv'; // padrão
+  document.getElementById('loadedFileLabel').textContent = '🔄 Carregando automaticamente: ' + url;
+
+  Papa.parse(url, {
+    download: true,
+    header: true,
+    delimiter: ';',
+    skipEmptyLines: true,
+    complete: function(results) {
+      if (!results || !results.data || results.data.length === 0) {
+        alert('CSV carregou, mas veio vazio. Verifique o arquivo: ' + url);
+        return;
+      }
+
+      const cols = Object.keys(results.data[0] || {});
+      const lines = [cols.join(';')].concat(
+        results.data.map(row =>
+          cols.map(c => (row[c] ?? '')).toString().replaceAll('\n',' ').trim()
+        ).join(';')
+      );
+      processCSV(lines.join('\n'));
+    },
+    error: function(err) {
+      console.error(err);
+      alert('Falha ao carregar automaticamente o CSV: ' + url + '\n\nDica: no GitHub Pages use "escalas.csv" na mesma pasta, ou um link RAW.');
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', autoLoadCSV);
 </script>
+
 </body>
 </html>
